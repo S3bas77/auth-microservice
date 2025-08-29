@@ -14,24 +14,11 @@ import upb.edu.AuthMicroservice.exceptions.InvalidSessionException;
 
 import upb.edu.AuthMicroservice.models.Session;
 import upb.edu.AuthMicroservice.repositories.SessionRepository;
-import upb.edu.AuthMicroservice.repositories.UserRepository;
+//import upb.edu.AuthMicroservice.repositories.UserRepository;
 
 
 @Service
 public class SessionService {
-
-    @Autowired
-    private SessionInteractor interactor;
-
-    @Autowired
-
-    private RefreshTokenInteractor refreshTokenInteractor;
-
-    
-    private UserRepository userRepository;
-
-    @Autowired
-    private SessionRepository sessionRepository;
 
     public static class SessionCreationResult {
         private final UUID sessionId;
@@ -43,48 +30,49 @@ public class SessionService {
             this.accessToken = accessToken;
             this.refreshToken = refreshToken;
         }
+
         public UUID getSessionId() { return sessionId; }
         public UUID getAccessToken() { return accessToken; }
         public UUID getRefreshToken() { return refreshToken; }
     }
 
+    @Autowired
+    private SessionInteractor sessionInteractor;
+
+    @Autowired
+    private RefreshTokenInteractor refreshTokenInteractor;
+
+    @Autowired
+    private SessionRepository sessionRepository;
+
     public SessionCreationResult generateSession(int userId) {
-        if (userId <= 0) {
-            throw new IllegalArgumentException("El user_id proporcionado no es válido o no existe");
+        UUID sessionId = sessionInteractor.execute(userId); 
+        Optional<Session> opt = sessionRepository.findById(sessionId);
+        if (opt.isEmpty()) {
+            throw new IllegalStateException("No se pudo recuperar la sesión recién creada");
         }
-        if (!userRepository.existsById(userId)) {
-            throw new IllegalArgumentException("El user_id proporcionado no es válido o no existe");
-        }
-
-        UUID sessionId = interactor.execute(userId);
-
-        Optional<Session> maybe = sessionRepository.findById(sessionId);
-        if (maybe.isEmpty()) {
-            throw new RuntimeException("La sesión fue creada pero no se pudo recuperar");
-        }
-        Session created = maybe.get();
-
-        UUID refreshToken = UUID.randomUUID();
-        LocalDateTime now = LocalDateTime.now();
-        created.setRefreshToken(refreshToken);
-        created.setRefreshTokenExpiresAt(now.plusDays(7));
-
-        sessionRepository.save(created);
-
-        return new SessionCreationResult(created.getId(), created.getAccessToken(), created.getRefreshToken());
+        Session s = opt.get();
+        return new SessionCreationResult(s.getId(), s.getAccessToken(), s.getRefreshToken());
     }
 
-    public Optional<Session> getSessionById(UUID sessionId) {
-        return interactor.findById(sessionId);
+    public void invalidateSession(UUID sessionId) {
+        Optional<Session> opt = sessionRepository.findById(sessionId);
+        if (opt.isEmpty()) {
+            throw new InvalidSessionException("Sesión no encontrada");
+        }
+        Session s = opt.get();
+        s.setIsValid(false);
+        sessionRepository.save(s);
     }
 
-    public String refreshAccessToken(String refreshToken) {
+    public String refreshAccessToken(String refreshTokenStr) {
         UUID rt;
         try {
-            rt = UUID.fromString(refreshToken);
-        } catch (Exception e) {
-            throw new IllegalArgumentException("refresh_token no es un UUID válido");
+            rt = UUID.fromString(refreshTokenStr);
+        } catch (IllegalArgumentException e) {
+            throw new InvalidRefreshTokenException("Refresh token inválido");
         }
+
         try {
             UUID newAccess = refreshTokenInteractor.execute(rt, 15);
             if (newAccess == null) {
@@ -97,5 +85,15 @@ public class SessionService {
             }
             throw ex;
         }
+    }
+
+    public boolean isAccessValid(UUID sessionId) {
+        return sessionRepository.findById(sessionId)
+                .filter(Session::isValid)
+                .filter(s -> s.getExpiresAt() != null && s.getExpiresAt().isAfter(LocalDateTime.now()))
+                .isPresent();
+    }
+    public java.util.Optional<upb.edu.AuthMicroservice.models.Session> getSessionById(java.util.UUID sessionId) {
+    return sessionRepository.findById(sessionId);
     }
 }

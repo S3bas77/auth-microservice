@@ -13,13 +13,12 @@ public class SessionInteractor {
 
     @Autowired
     private SessionRepository sessionRepository;
+
     public UUID execute(int userId) {
         Session session = new Session();
         UUID sessionId = UUID.randomUUID();
-        UUID accessToken = UUID.randomUUID();
 
         session.setId(sessionId);
-        session.setAccessToken(accessToken);
         session.setUserId(userId);
         session.setCreatedAt(LocalDateTime.now());
         session.setExpiresAt(LocalDateTime.now().plusMinutes(15));
@@ -29,10 +28,6 @@ public class SessionInteractor {
         session.setRefreshTokenExpiresAt(LocalDateTime.now().plusDays(7));
 
         sessionRepository.save(session);
-        return sessionId; 
-    }
-
-    public java.util.Optional<Session> findById(UUID id) {
-        return sessionRepository.findById(id);
+        return sessionId;
     }
 }

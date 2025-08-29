@@ -15,10 +15,10 @@ public class Session {
     @Column(name = "user_id")
     private int userId;
 
-    @Column(name = "access_token", nullable = false, unique = true, columnDefinition = "uuid")
+    @Column(name = "access_token", columnDefinition = "uuid")
     private UUID accessToken;
 
-    @Column(name = "refresh_token", unique = true, columnDefinition = "uuid")
+    @Column(name = "refresh_token", columnDefinition = "uuid", unique = true)
     private UUID refreshToken;
 
     @Column(name = "created_at")
@@ -32,8 +32,6 @@ public class Session {
 
     @Column(name = "is_valid")
     private boolean isValid;
-
-    public Session() {}
 
     public UUID getId() { return id; }
     public void setId(UUID id) { this.id = id; }
