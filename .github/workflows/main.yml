@@ -3,7 +3,7 @@ name: Deploy Frontend to Vercel
 on:
   push:
     branches:
-      - main  # cambia si quieres desplegar desde otra rama
+      - main  # o la rama que uses para producción
 
 jobs:
   deploy:
@@ -32,8 +32,8 @@ jobs:
         run: |
           npm install -g vercel
           cd frontend
-          vercel --prod \
-            --token ${{ secrets.VERCEL_TOKEN }} \
-            --project ${{ secrets.VERCEL_PROJECT_ID }} \
-            --scope ${{ secrets.VERCEL_ORG_ID }} \
-            --confirm
+          vercel --prod --token ${{ secrets.VERCEL_TOKEN }} --confirm
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+
