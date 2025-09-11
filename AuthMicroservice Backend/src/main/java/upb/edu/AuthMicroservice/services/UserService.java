@@ -8,7 +8,7 @@ import upb.edu.AuthMicroservice.models.User;
 
 import java.util.Map;
 import java.util.Optional;
-//import java.util.UUID;
+import java.util.UUID;
 
 @Service
 public class UserService {
@@ -56,27 +56,44 @@ public class UserService {
     }
 
     public org.springframework.http.ResponseEntity<Object> createUser(upb.edu.AuthMicroservice.models.User user) {
-    Object result = userInteractor.createUser(user); 
+      Object result = userInteractor.createUser(user); 
 
-    boolean created;
-    if (result instanceof Boolean b) {
-        created = b;
-    } else if (result instanceof upb.edu.AuthMicroservice.models.User u) {
-        created = (u != null) && (u.getId() != 0);
-    } else if (result instanceof java.util.Optional<?> opt) {
-        created = ((java.util.Optional<?>) opt).isPresent();
-    } else {
-        created = result != null;
-    }
+      boolean created;
+      if (result instanceof Boolean b) {
+          created = b;
+      } else if (result instanceof upb.edu.AuthMicroservice.models.User u) {
+          created = (u != null) && (u.getId() != 0);
+      } else if (result instanceof java.util.Optional<?> opt) {
+          created = ((java.util.Optional<?>) opt).isPresent();
+      } else {
+          created = result != null;
+      }
 
-    if (created) {
-        return org.springframework.http.ResponseEntity.ok(
-                java.util.Map.of("code", 200, "msg", "Ok")
-        );
-    } else {
-        return org.springframework.http.ResponseEntity.status(400).body(
-                java.util.Map.of("code", 400, "msg", "Bad Request")
-        );
+      if (created) {
+          return org.springframework.http.ResponseEntity.ok(
+                  java.util.Map.of("code", 200, "msg", "Ok")
+          );
+      } else {
+          return org.springframework.http.ResponseEntity.status(400).body(
+                  java.util.Map.of("code", 400, "msg", "Bad Request")
+          );
     }
+ 
+    public ResponseEntity<Object> validateEmail(String email) {
+        Optional<User> userOpt = userInteractor.findByEmail(email);
+        
+        if (userOpt.isPresent()) {
+            return ResponseEntity.ok(Map.of(
+                "code", 200,
+                "msg", "Email verified"
+            ));
+        } else {
+            return ResponseEntity
+                .status(404)
+                .body(Map.of(
+                    "code", 404,
+                    "msg", "Email not found"
+                ));
+        }
     }
 }

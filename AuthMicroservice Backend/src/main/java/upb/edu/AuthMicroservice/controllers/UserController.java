@@ -9,6 +9,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import upb.edu.AuthMicroservice.models.ChangePasswordRequest;
+import upb.edu.AuthMicroservice.models.EmailValidationRequest;
 import upb.edu.AuthMicroservice.models.LoginRequest;
 import upb.edu.AuthMicroservice.models.Response;
 import upb.edu.AuthMicroservice.models.User;
@@ -91,6 +92,27 @@ public class UserController {
             throw new ResponseStatusException(
                     HttpStatus.BAD_REQUEST,
                     "Login failed",
+                    e
+            );
+        }
+    }
+
+    public ServerResponse validateEmail(ServerRequest request) {
+        log.info("Received email validation request at: {}", request.uri().getPath());
+        try {
+            log.info("Attempting to read request body");
+            EmailValidationRequest validationRequest = request.body(EmailValidationRequest.class);
+            log.info("Successfully parsed request body. Validating email: {}", validationRequest.getEmail());
+            ResponseEntity<Object> response = userService.validateEmail(validationRequest.getEmail());
+            
+            return ServerResponse
+                    .status(response.getStatusCodeValue())
+                    .body(response.getBody());
+        } catch (IOException | ServletException e) {
+            log.error("Error binding request for email validation", e);
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Email validation failed",
                     e
             );
         }

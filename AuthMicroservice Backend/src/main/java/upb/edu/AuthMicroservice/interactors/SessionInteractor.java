@@ -23,7 +23,6 @@ public class SessionInteractor {
         session.setCreatedAt(LocalDateTime.now());
         session.setExpiresAt(LocalDateTime.now().plusMinutes(15));
         session.setIsValid(true);
-        session.setAccessToken(UUID.randomUUID());
         session.setRefreshToken(UUID.randomUUID());
         session.setRefreshTokenExpiresAt(LocalDateTime.now().plusDays(7));
 

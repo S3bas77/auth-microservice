@@ -14,11 +14,23 @@ import upb.edu.AuthMicroservice.exceptions.InvalidSessionException;
 
 import upb.edu.AuthMicroservice.models.Session;
 import upb.edu.AuthMicroservice.repositories.SessionRepository;
-//import upb.edu.AuthMicroservice.repositories.UserRepository;
+import upb.edu.AuthMicroservice.repositories.UserRepository;
 
 
 @Service
 public class SessionService {
+
+    @Autowired
+    private SessionInteractor sessionInteractor;
+  
+    @Autowired
+    private RefreshTokenInteractor refreshTokenInteractor;
+
+    @Autowired
+    private UserRepository userRepository;
+
+    @Autowired
+    private SessionRepository sessionRepository;
 
     public static class SessionCreationResult {
         private final UUID sessionId;
@@ -36,14 +48,6 @@ public class SessionService {
         public UUID getRefreshToken() { return refreshToken; }
     }
 
-    @Autowired
-    private SessionInteractor sessionInteractor;
-
-    @Autowired
-    private RefreshTokenInteractor refreshTokenInteractor;
-
-    @Autowired
-    private SessionRepository sessionRepository;
 
     public SessionCreationResult generateSession(int userId) {
         UUID sessionId = sessionInteractor.execute(userId); 

@@ -6,7 +6,6 @@ import upb.edu.AuthMicroservice.models.Session;
 
 import java.util.Optional;
 import java.util.UUID;
-import java.util.Optional;
 
 @Repository
 public interface SessionRepository extends JpaRepository<Session, UUID> {
