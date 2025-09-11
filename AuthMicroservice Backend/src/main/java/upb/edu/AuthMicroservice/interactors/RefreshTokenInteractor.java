@@ -17,9 +17,8 @@ public class RefreshTokenInteractor {
 
     public UUID execute(UUID refreshToken, int minutesToAdd) {
         Optional<Session> opt = sessionRepository.findByRefreshToken(refreshToken);
-        if (opt.isEmpty()) {
-            return null;
-        }
+        if (opt.isEmpty()) return null;
+
         Session s = opt.get();
         if (!s.isValid()) {
             throw new IllegalStateException("SESSION_INVALID");
