@@ -4,7 +4,7 @@ import PopUpForgotPassword from "./PopUpForgotPassword";
 import { useNavigate } from "react-router-dom";
 import { object, string } from "yup";
 import type { InferType } from "yup";
-import { Form, Input, Typography } from "antd";
+import { Form, Input, Typography, message as antdMessage } from "antd";
 import SocialLoginButtons from "./SocialLoginButtons";
 import PrimaryButton from "./PrimaryButton";
 
@@ -14,7 +14,6 @@ const signInSchema = object({
   email: string().required("Email requerido").email("Email inválido"),
   password: string().required("Contraseña requerida"),
 });
-
 type SignInFormData = InferType<typeof signInSchema>;
 
 export default function SignInForm() {
@@ -23,14 +22,27 @@ export default function SignInForm() {
   const [form] = Form.useForm<SignInFormData>();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  const [messageApi, contextHolder] = antdMessage.useMessage();
+
   const onFinish = async (values: SignInFormData) => {
     setIsSubmitting(true);
     try {
       await signInSchema.validate(values, { abortEarly: false });
-      const data = await loginUser({ email: values.email, password: values.password });
-      navigate("/success");
-      console.log("Login success:", data);
-    } catch (error) {
+
+      const data = await loginUser({
+        email: values.email,
+        password: values.password,
+      });
+
+      localStorage.setItem("access_token", data.access_token);
+      localStorage.setItem("refresh_token", data.refresh_token);
+      localStorage.setItem("session_id", data.session_id);
+      localStorage.setItem("isAuthenticated", "true");
+
+      messageApi.success(data.msg || "Has iniciado sesión correctamente");
+
+      navigate("/");
+    } catch (error: any) {
       if (error && typeof error === "object" && "inner" in error) {
         const validationError = error as {
           inner?: Array<{ path?: string; message: string }>;
@@ -46,9 +58,10 @@ export default function SignInForm() {
           }))
         );
       } else {
-        // Mostrar error de login
+        messageApi.error(error?.message ?? "No se pudo iniciar sesión");
         form.setFields([
-          { name: "email", errors: ["Credenciales inválidas"] },
+          { name: "email", errors: [" "] },
+          { name: "password", errors: [" "] },
         ]);
       }
     } finally {
@@ -69,16 +82,26 @@ export default function SignInForm() {
         textAlign: "center",
       }}
     >
+      {contextHolder}
+
       <h1 style={{ fontWeight: "bold", margin: 0 }}>Sign in</h1>
       <SocialLoginButtons />
       <Text style={{ fontSize: 12 }}>or use your account</Text>
-      <Form form={form} layout="vertical" onFinish={onFinish} style={{ width: "100%", marginTop: 16 }}>
+
+      <Form
+        form={form}
+        layout="vertical"
+        onFinish={onFinish}
+        style={{ width: "100%", marginTop: 16 }}
+      >
         <Form.Item name="email">
           <Input placeholder="Email" type="email" size="large" />
         </Form.Item>
+
         <Form.Item name="password">
           <Input.Password placeholder="Password" size="large" />
         </Form.Item>
+
         <a
           href="#"
           style={{
@@ -102,11 +125,24 @@ export default function SignInForm() {
         >
           Forgot your password?
         </a>
-        <PopUpForgotPassword open={showForgot} onClose={() => setShowForgot(false)} />
-        <PrimaryButton htmlType="submit" disabled={isSubmitting} style={{ opacity: isSubmitting ? 0.7 : 1, cursor: isSubmitting ? "not-allowed" : "pointer" }}>
+
+        <PopUpForgotPassword
+          open={showForgot}
+          onClose={() => setShowForgot(false)}
+        />
+
+        <PrimaryButton
+          htmlType="submit"
+          disabled={isSubmitting}
+          style={{
+            opacity: isSubmitting ? 0.7 : 1,
+            cursor: isSubmitting ? "not-allowed" : "pointer",
+          }}
+        >
           {isSubmitting ? "Signing In..." : "Sign In"}
         </PrimaryButton>
       </Form>
+
       <button
         type="button"
         onClick={() => navigate("/signup")}
